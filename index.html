@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Train Tracker</title>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <!-- Moment JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+    <style>
+        form {
+            padding: 1em;
+        }
+        .employee-form {
+            margin-top: 2em;
+        }
+
+        tr {
+            margin: 1em;
+        }
+    </style>
+    <!-- Title -->
+    <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+            <h1 class="display-4">Anytime Is Train Time</h1>
+            <p class="lead">Choo Choo. Chee Chee.</p>
+        </div>
+    </div>
+</div>
+
+    <div class="container">
+        <div class="card" style="width: 90%;">
+            <div class="card-header">
+                Current Train Schedule
+            </div>
+            <table class="table-center">
+                <thead>
+                    <tr>
+                    <th scope="col" id="#name-display">Train Name</th>
+                    <th scope="col">Destination</th>
+                    <th scope="col">Frequency (min) </th>
+                    <th scope="col">Next Arrival</th>
+                    <th scope="col">Minutes Away</th>
+                    
+                    </tr>
+                </thead>
+                <tbody id="train-list">
+                    <tr></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Add Employee -->
+    <div class="container train-form">
+        <div class="card" style="width: 90%;">
+            <div class="card-header">
+                Add Train
+            </div>
+            <div class="panel-body">
+                <form>
+                    <div class="form-group">
+                        <!-- Employee Name -->
+                        <label for="train-name">Train Name</label>
+                        <input type="text" class="form-control" id="train-name" aria-describedby="trainName">
+                        <!-- Employee Role -->
+                        <label for="destination">Destination</label>
+                        <input type="text" class="form-control" id="destination" aria-describedby="destination">
+                        <!-- Start Date -->
+                        <label for="train time">First Train Time(HH:mm-mititary time)</label>
+                        <input type="time"  class="form-control"  id="train-time" aria-describedby="trainTime">
+                        <!-- Monthly Rate -->
+                        <label for="frequency">Frequency</label>
+                        <input type="text" class="form-control" id="frequency" aria-describedby="frequency">
+                    </div>                    
+                    <button type="submit" class="btn btn-primary" id="add-train">Submit</button>
+                </form>
+            </div>
+           
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/5.8.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.8.2/firebase-database.js"></script>
+    <script>
+
+    // Initialize Firebase
+    var config = {
+    apiKey: "AIzaSyBwlUvH0reURRPeOTZOO_OlEKVLadAL1OA",
+    authDomain: "train-scheduler-c9d3d.firebaseapp.com",
+    databaseURL: "https://train-scheduler-c9d3d.firebaseio.com",
+    projectId: "train-scheduler-c9d3d",
+    storageBucket: "train-scheduler-c9d3d.appspot.com",
+    messagingSenderId: "767271651292"
+    };
+    firebase.initializeApp(config);
+    // variable saves firebase
+    var database = firebase.database();
+    var trainName = "";
+var trainDestination = "";
+var trainTimeFirst = "";
+var trainFrequency = "";
+// Add train function
+$("#add-train").on("click", function(event) {
+   event.preventDefault();
+   // Pulls value from input
+   trainName = $("#train-name").val().trim();
+   trainDestination = $("#destination").val().trim();
+   trainTimeFirst = $("#train-time").val().trim();
+   trainFrequency = $("#frequency").val().trim();
+   // Push to database
+   database.ref().push({
+       nameDb: trainName,
+       destinationDb: trainDestination,
+       frequencyDb: trainFrequency,
+       firstTrainDb: trainTimeFirst,
+       dateAddedDb: firebase.database.ServerValue.TIMESTAMP
+   });
+   // Clears form after submit
+   $("#train-name").val("");
+   $("#destination").val("");
+   $("#train-time").val("");
+   $("#frequency").val("");
+});
+// Firebase watcher, initial loader
+database.ref().on("child_added", function(childsnapshot) {
+    var sv = childsnapshot.val();
+//    trainName = childsnapshot.val().nameDb;
+//    trainDestination = childsnapshot.val().destinationDb;
+//    trainTimeFirst = childsnapshot.val().firstTrainDb;
+//    trainFrequency = childsnapshot.val().frequencyDb;
+   // Calculations of next train and minutes away
+   var trainTimeConverted = moment(trainTimeFirst, "HH:mm").subtract(1, "years");
+   var currentTime = moment();
+   var diffTime = moment().diff(moment(trainTimeConverted), "minutes");
+   var remainderTime = diffTime % trainFrequency;
+   var trainMinutesAway = trainFrequency - remainderTime;
+   var trainNext = moment().add(trainMinutesAway, "minutes");
+
+   childsnapshot.val().nameDb;
+   childsnapshot.val().destinationDb;
+   childsnapshot.val().frequencyDb;
+   childsnapshot.val().nextArrivalDb;
+   childsnapshot.val().minutesAwayDb;
+   // Appending to table
+ $("#train-list").append("<tr><td>" + trainName + "</td><td>" + trainDestination + "</td><td>" + trainFrequency + "</td><td>" + moment(trainNext).format("hh:mm") + "</td><td>" + trainMinutesAway + "</td><tr>");
+   // Error handler
+
+},
+ function(errorObject) {
+   console.log("Errors handled: " + errorObject.code);
+});
+
+</script>
+</body>
+</html>
+
+
+
